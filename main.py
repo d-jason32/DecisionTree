@@ -82,19 +82,61 @@ class DecisionTree:
         return self._traverse_tree(x, node.right)
 
 
+# Evaluation metrics for accuracy, precision, recall and F1-score.
+def evaluate(y_true, y_pred):
+    # calculate accuracy
+    accuracy = np.mean(y_true == y_pred)
+    
+    # calculate true positives, false positives, and false negatives
+    tp = np.sum((y_pred == 1) & (y_true == 1))
+    fp = np.sum((y_pred == 1) & (y_true == 0))
+    fn = np.sum((y_pred == 0) & (y_true == 1))
+    
+    # calculate precision
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    
+    # calculate recall
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    
+    # calculate f1 score
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    
+    return accuracy, precision, recall, f1
+
+
 # Example usage:
 if __name__ == "__main__":
     # Load the breast cancer data set
     from sklearn.datasets import load_breast_cancer
     from sklearn.model_selection import train_test_split
+    from sklearn.tree import DecisionTreeClassifier
 
     data = load_breast_cancer()
     X, y = data.data, data.target
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    tree = DecisionTree(max_depth=3)
-    tree.fit(X_train, y_train)
-    predictions = tree.predict(X_test)
+# Data from our custom tree
+    custom_tree = DecisionTree(max_depth=3)
+    custom_tree.fit(X_train, y_train)
+    custom_predictions = custom_tree.predict(X_test)
 
-    accuracy = np.mean(predictions == y_test)
-    print(f"Accuracy: {accuracy:.2f}")
+    custom_acc, custom_prec, custom_rec, custom_f1 = evaluate(y_test, custom_predictions)
+
+
+   # Data from the tree made by scikit-learn
+    sklearn_tree = DecisionTreeClassifier(max_depth=3, criterion='entropy', random_state=42)
+    sklearn_tree.fit(X_train, y_train)
+    sklearn_predictions = sklearn_tree.predict(X_test)
+
+    sklearn_acc, sklearn_prec, sklearn_rec, sklearn_f1 = evaluate(y_test, sklearn_predictions)
+
+    # Comparison summary
+    print("\n" + "=" * 50)
+    print("Comparison Summary")
+    print("=" * 50)
+    print(f"{'Metric':<12} {'Custom':>10} {'Sklearn':>10} {'Diff':>10}")
+    print("-" * 42)
+    print(f"{'Accuracy':<12} {custom_acc:>10.2f} {sklearn_acc:>10.2f} {custom_acc - sklearn_acc:>+10.2f}")
+    print(f"{'Precision':<12} {custom_prec:>10.2f} {sklearn_prec:>10.2f} {custom_prec - sklearn_prec:>+10.2f}")
+    print(f"{'Recall':<12} {custom_rec:>10.2f} {sklearn_rec:>10.2f} {custom_rec - sklearn_rec:>+10.2f}")
+    print(f"{'F1-score':<12} {custom_f1:>10.2f} {sklearn_f1:>10.2f} {custom_f1 - sklearn_f1:>+10.2f}")
